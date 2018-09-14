@@ -23,16 +23,16 @@ typedef struct ip_hdr {
 }ip_hdr;
 
 typedef struct tcp_hdr {
-	unsigned short port_src;
-	unsigned short port_dest;
-	unsigned int tcp_seq;
-	unsigned int tcp_ack;
-	unsigned int tcp_blank:4;
-	unsigned int tcp_hlen:4;
-	unsigned char tcp_flags;
-	unsigned short tcp_wnd;
-	unsigned short tcp_checksum;
-	unsigned short tcp_urgpnt;
+	unsigned short port_src;	// tcp source port (2byte)
+	unsigned short port_dest;	// tcp destination port (2byte)
+	unsigned int tcp_seq;		// tcp sequence number (4byte)
+	unsigned int tcp_ack;		// tcp acknowledgement number (4byte)
+	unsigned int tcp_blank:4;	// tcp reserved field (4bit, Little Endian) - 2bit to flag
+	unsigned int tcp_hlen:4;	// tcp header length (4bit, Little Endian)
+	unsigned char tcp_flags;	// tcp flags (8bit) - 2bit from Reserved
+	unsigned short tcp_wnd;		// tcp window size (2byte)
+	unsigned short tcp_checksum;	// tcp checksum (2byte)
+	unsigned short tcp_urgpnt;	// tcp urgent pointer (2byte)
 }tcp_hdr;
 
 
