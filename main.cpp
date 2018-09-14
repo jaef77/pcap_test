@@ -1,6 +1,7 @@
 #include <pcap.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <netinet/if_ether.h>
 #include <arpa/inet.h>
 
 typedef struct eth_hdr {
@@ -70,17 +71,17 @@ void parse(const uint8_t* p, eth_hdr* ETH, ip_hdr* IP, tcp_hdr* TCP, int len) {
 			p += 4*(TCP->tcp_hlen);
 			printf("-----------Ethernet-----------\n");
 			printf("Source MAC : ");
-			print_mac(ETH->source_mac);
+			print_mac(ETH->source_mac, sizeof(ETH->source_mac));
 			printf("\nDestination MAC : ");
-			print_mac(ETH->dest_mac);
+			print_mac(ETH->dest_mac, sizeof(ETH->dest_mac));
 			printf("\n--------------IP--------------\n");
 			printf("Source IP : %s\n", inet_ntoa(IP->ip_src));
 			printf("Destination IP : %s\n", inet_ntoa(IP->ip_dest));
 			printf("--------------TCP-------------\n");
 			printf("Source Port : %u\n",ntohs(TCP->port_src));
 			printf("Destination Port : %u\n",ntohs(TCP->port_dest));
-			int newlen = ip_len - ip_hl*4 - tcp_hlen*4;
-			newlen = (newlen < 32) ? newlen : 32
+			int newlen = (IP->ip_len) - (IP->ip_hl)*4 - (TCP->tcp_hlen)*4;
+			newlen = (newlen < 32) ? newlen : 32;
 			dump(p, newlen);
 			printf("\n\n");
 		}
