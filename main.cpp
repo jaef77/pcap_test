@@ -4,39 +4,39 @@
 #include <arpa/inet.h>
 
 typedef struct eth_hdr {
-	unsigned char dest_mac[6];	// destination MAC (6byte)
-	unsigned char source_mac[6];	// source MAC (6byte)
-	unsigned short eth_type;	// Ethernet Type (2byte)
+	uint8_t dest_mac[6];	// destination MAC (6byte)
+	uint8_t source_mac[6];	// source MAC (6byte)
+	uint16_t eth_type;	// Ethernet Type (2byte)
 }eth_hdr;
 
 typedef struct ip_hdr {
-	unsigned int ip_hl:4;		// ip header length (4bit) (Little Endian)
-	unsigned int ip_ver:4;		// ip version (4bit) (Little Endian)
-	unsigned char ip_tos;		// ip type of service (1byte)
-	unsigned short ip_len;		// ip total length (2byte)
-	unsigned short ip_id;		// ip identifier (2byte)
-	unsigned short ip_off;		// ip fragment offset field (2byte)
-	unsigned int ip_ttl:8;		// ip time to live (1byte)
-	unsigned int ip_pro:8;		// ip protocol (1byte)
-	unsigned short ip_check;	// ip checksum (2byte)
+	uint8_t ip_hl:4;		// ip header length (4bit) (Little Endian)
+	uint8_t ip_ver:4;		// ip version (4bit) (Little Endian)
+	uint8_t ip_tos;		// ip type of service (1byte)
+	uint16_t ip_len;		// ip total length (2byte)
+	uint16_t ip_id;		// ip identifier (2byte)
+	uint16_t ip_off;		// ip fragment offset field (2byte)
+	uint8_t ip_ttl;		// ip time to live (1byte)
+	uint8_t ip_pro;		// ip protocol (1byte)
+	uint16_t ip_check;	// ip checksum (2byte)
 	struct in_addr ip_src, ip_dest;	// ip address (each 4byte)
 }ip_hdr;
 
 typedef struct tcp_hdr {
-	unsigned short port_src;	// tcp source port (2byte)
-	unsigned short port_dest;	// tcp destination port (2byte)
-	unsigned int tcp_seq;		// tcp sequence number (4byte)
-	unsigned int tcp_ack;		// tcp acknowledgement number (4byte)
-	unsigned int tcp_blank:4;	// tcp reserved field (4bit, Little Endian) - 2bit to flag
-	unsigned int tcp_hlen:4;	// tcp header length (4bit, Little Endian)
-	unsigned char tcp_flags;	// tcp flags (8bit) - 2bit from Reserved
-	unsigned short tcp_wnd;		// tcp window size (2byte)
-	unsigned short tcp_checksum;	// tcp checksum (2byte)
-	unsigned short tcp_urgpnt;	// tcp urgent pointer (2byte)
+	uint16_t port_src;	// tcp source port (2byte)
+	uint16_t port_dest;	// tcp destination port (2byte)
+	uint32_t tcp_seq;		// tcp sequence number (4byte)
+	uint32_t tcp_ack;		// tcp acknowledgement number (4byte)
+	uint8_t tcp_blank:4;	// tcp reserved field (4bit, Little Endian) - 2bit to flag
+	uint8_t tcp_hlen:4;	// tcp header length (4bit, Little Endian)
+	uint8_t tcp_flags;	// tcp flags (8bit) - 2bit from Reserved
+	uint16_t tcp_wnd;		// tcp window size (2byte)
+	uint16_t tcp_checksum;	// tcp checksum (2byte)
+	uint16_t tcp_urgpnt;	// tcp urgent pointer (2byte)
 }tcp_hdr;
 
 
-void dump(const u_char* p, int len) {
+void dump(const uint8_t* p, int len) {
 	for(int i=0; i<len; i++) {
 		printf("%02x ", *p);
 		p++;
@@ -45,50 +45,43 @@ void dump(const u_char* p, int len) {
 	}
 }
 
+void print_mac(uint8_t *mac, int len) {
+	for(int i=0;i<len;i++)
+	{
+		printf("%02x", mac[i]);
+		if(i<5)
+			printf(":");
+	}
+}
 
-void parse(const u_char* p, eth_hdr* ETH, ip_hdr* IP, tcp_hdr* TCP, int len) {
+void parse(const uint8_t* p, eth_hdr* ETH, ip_hdr* IP, tcp_hdr* TCP, int len) {
 	const u_char* tmp;
 	ETH = (eth_hdr *)p;
 	p +=  sizeof(eth_hdr);
-	if(ntohs(ETH->eth_type) == 0x0800)
+	if(ntohs(ETH->eth_type) == ETHERTYPE_IP)
 	{
 		IP = (ip_hdr* )p;
 		p += 4*(IP->ip_hl);
-		if(IP->ip_pro == 0x06)
+		if(IP->ip_pro == IPPROTO_TCP)
 		{
 			printf("----------------------------------------------\n");
 			printf("%ubyte TCP Packet Captured\n", len);
 			TCP = (tcp_hdr* )p;
 			p += 4*(TCP->tcp_hlen);
-			printf("Ethernet\n");
+			printf("-----------Ethernet-----------\n");
 			printf("Source MAC : ");
-			for(int i=0;i<6;i++)
-			{
-				printf("%02x", ETH->source_mac[i]);
-				if(i<5)
-					printf(":");
-			}
+			print_mac(ETH->source_mac);
 			printf("\nDestination MAC : ");
-			for(int i=0;i<6;i++)
-			{
-				printf("%02x", ETH->dest_mac[i]);
-				if(i<5)
-					printf(":");
-			}
-			printf("\nIP\n");
+			print_mac(ETH->dest_mac);
+			printf("\n--------------IP--------------\n");
 			printf("Source IP : %s\n", inet_ntoa(IP->ip_src));
 			printf("Destination IP : %s\n", inet_ntoa(IP->ip_dest));
-			printf("TCP\n");
+			printf("--------------TCP-------------\n");
 			printf("Source Port : %u\n",ntohs(TCP->port_src));
 			printf("Destination Port : %u\n",ntohs(TCP->port_dest));
-			int newlen = len - sizeof(eth_hdr) - 4*(IP->ip_hl) - 4*(TCP->tcp_hlen);
-			if(newlen<=32) {
-				dump(p, newlen);
-			}
-			else {
-				dump(p, 32);
-				printf("...");
-			}
+			int newlen = ip_len - ip_hl*4 - tcp_hlen*4;
+			newlen = (newlen < 32) ? newlen : 32
+			dump(p, newlen);
 			printf("\n\n");
 		}
 	}
