@@ -80,7 +80,7 @@ void parse(const uint8_t* p, eth_hdr* ETH, ip_hdr* IP, tcp_hdr* TCP, int len) {
 			printf("--------------TCP-------------\n");
 			printf("Source Port : %u\n",ntohs(TCP->port_src));
 			printf("Destination Port : %u\n",ntohs(TCP->port_dest));
-			int newlen = (IP->ip_len) - (IP->ip_hl)*4 - (TCP->tcp_hlen)*4;
+			int newlen = (ntohs)(IP->ip_len) - (IP->ip_hl)*4 - (TCP->tcp_hlen)*4;
 			newlen = (newlen < 32) ? newlen : 32;
 			dump(p, newlen);
 			printf("\n\n");
